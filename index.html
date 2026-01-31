@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couple Harmony - 夫婦の共有ダッシュボード</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Harmony">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">✨</span>
+                <span class="logo-text">Harmony</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>ダッシュボード</span>
+                </li>
+                <li data-tab="calendar">
+                    <i data-lucide="calendar"></i>
+                    <span>スケジュール</span>
+                </li>
+                <li data-tab="finance">
+                    <i data-lucide="wallet"></i>
+                    <span>家計管理</span>
+                </li>
+                <li data-tab="assets">
+                    <i data-lucide="trending-up"></i>
+                    <span>資産運用</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="cloud-status" id="cloud-status">
+                    <i data-lucide="cloud-off"></i>
+                    <span>オフライン</span>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar-group">
+                        <div class="avatar husband" title="夫">夫</div>
+                        <div class="avatar wife" title="妻">妻</div>
+                    </div>
+                    <button class="btn-icon" onclick="openSettings()"><i data-lucide="settings"></i></button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="page-title">ダッシュボード</h1>
+                <div class="current-date" id="current-date">2026年 1月 30日 (金)</div>
+            </header>
+
+            <!-- Tab: Dashboard -->
+            <section id="dashboard" class="tab-content active">
+                <div class="grid-container dashboard-grid">
+                    <!-- Today's Highlights -->
+                    <div class="card glass highlight-card">
+                        <h3>今日の予定</h3>
+                        <div class="schedule-list" id="today-schedule">
+                            <!-- JS will populate from calendar events -->
+                        </div>
+                    </div>
+
+                    <!-- Tasks Integrated into Dashboard -->
+                    <div class="card glass todo-card">
+                        <div class="section-header-row">
+                            <h3>夫のタスク</h3>
+                            <button class="btn-icon" onclick="addTodo('husband')"><i data-lucide="plus"></i></button>
+                        </div>
+                        <ul class="todo-list" id="todo-husband">
+                            <!-- JS will populate -->
+                        </ul>
+                    </div>
+
+                    <div class="card glass todo-card">
+                        <div class="section-header-row">
+                            <h3>妻のタスク</h3>
+                            <button class="btn-icon" onclick="addTodo('wife')"><i data-lucide="plus"></i></button>
+                        </div>
+                        <ul class="todo-list" id="todo-wife">
+                            <!-- JS will populate -->
+                        </ul>
+                    </div>
+
+                    <div class="card glass todo-card">
+                        <div class="section-header-row">
+                            <h3>共有タスク</h3>
+                            <button class="btn-icon" onclick="addTodo('shared')"><i data-lucide="plus"></i></button>
+                        </div>
+                        <ul class="todo-list" id="todo-shared">
+                            <!-- JS will populate -->
+                        </ul>
+                    </div>
+
+                    <!-- Quick Memo -->
+                    <div class="card glass memo-card">
+                        <div class="section-header-row">
+                            <h3>クイックメモ</h3>
+                            <button class="btn-icon"><i data-lucide="edit-3"></i></button>
+                        </div>
+                        <textarea placeholder="二人のメモをここに..." id="dashboard-memo"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Calendar -->
+            <section id="calendar" class="tab-content">
+                <div class="card glass full-calendar">
+                    <div class="calendar-header">
+                        <button class="btn-icon" id="prev-month"><i data-lucide="chevron-left"></i></button>
+                        <h2 id="month-display">2026年 2月</h2>
+                        <button class="btn-icon" id="next-month"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- JS will populate this -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Finance -->
+            <section id="finance" class="tab-content">
+                <div class="finance-grid">
+                    <!-- Column: Husband (夫) -->
+                    <div class="finance-column husband">
+                        <div class="card glass">
+                            <div class="column-header">
+                                <i data-lucide="user"></i>
+                                <h2>夫 (Husband)</h2>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="finance-row summary-row primary">
+                                    <label>収入</label>
+                                    <div class="input-with-label">
+                                        <span class="currency">¥</span>
+                                        <input type="number" id="h-income" class="fin-input total-input" value="325000">
+                                    </div>
+                                </div>
+                                <div class="finance-row summary-row">
+                                    <label>固定費合計</label>
+                                    <span class="value-display warning" id="h-fixed-total">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row">
+                                    <label>その他合計</label>
+                                    <span class="value-display warning" id="h-other-total">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row">
+                                    <label>貯蓄合計</label>
+                                    <span class="value-display success" id="h-savings-total">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row footer">
+                                    <label>支出（合計）</label>
+                                    <span class="value-display" id="h-expenditure">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row balance">
+                                    <label>収支（残金）</label>
+                                    <span class="value-display" id="h-balance">¥0</span>
+                                </div>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="section-header-row">
+                                    <h3>貯金内訳</h3>
+                                    <button class="btn-icon" onclick="addSubItem('h', 'h-savings-list', 'save-val')"><i
+                                            data-lucide="plus"></i></button>
+                                </div>
+                                <div class="breakdown-list" id="h-savings-list">
+                                    <!-- Items will be injected by JS -->
+                                </div>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="section-header-row">
+                                    <h3>支出内訳 (固定費)</h3>
+                                    <button class="btn-icon" onclick="addSubItem('h', 'h-fixed-list', 'fixed-val')"><i
+                                            data-lucide="plus"></i></button>
+                                </div>
+                                <div class="breakdown-list" id="h-fixed-list">
+                                    <!-- Items will be injected by JS -->
+                                </div>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="section-header-row">
+                                    <h3>支出内訳 (その他)</h3>
+                                    <button class="btn-icon" onclick="addSubItem('h', 'h-other-list', 'other-val')"><i
+                                            data-lucide="plus"></i></button>
+                                </div>
+                                <div class="breakdown-list" id="h-other-list">
+                                    <!-- Items will be injected by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column: Wife (妻) -->
+                    <div class="finance-column wife">
+                        <div class="card glass">
+                            <div class="column-header">
+                                <i data-lucide="user"></i>
+                                <h2>妻 (Wife)</h2>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="finance-row summary-row primary">
+                                    <label>収入</label>
+                                    <div class="input-with-label">
+                                        <span class="currency">¥</span>
+                                        <input type="number" id="w-income" class="fin-input total-input" value="230000">
+                                    </div>
+                                </div>
+                                <div class="finance-row summary-row">
+                                    <label>固定費合計</label>
+                                    <span class="value-display warning" id="w-fixed-total">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row">
+                                    <label>その他合計</label>
+                                    <span class="value-display warning" id="w-other-total">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row">
+                                    <label>貯蓄合計</label>
+                                    <span class="value-display success" id="w-savings-total">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row footer">
+                                    <label>支出（合計）</label>
+                                    <span class="value-display" id="w-expenditure">¥0</span>
+                                </div>
+                                <div class="finance-row summary-row balance">
+                                    <label>収支（残金）</label>
+                                    <span class="value-display" id="w-balance">¥0</span>
+                                </div>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="section-header-row">
+                                    <h3>貯金内訳</h3>
+                                    <button class="btn-icon" onclick="addSubItem('w', 'w-savings-list', 'save-val')"><i
+                                            data-lucide="plus"></i></button>
+                                </div>
+                                <div class="breakdown-list" id="w-savings-list">
+                                    <!-- Items will be injected by JS -->
+                                </div>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="section-header-row">
+                                    <h3>支出内訳 (固定費)</h3>
+                                    <button class="btn-icon" onclick="addSubItem('w', 'w-fixed-list', 'fixed-val')"><i
+                                            data-lucide="plus"></i></button>
+                                </div>
+                                <div class="breakdown-list" id="w-fixed-list">
+                                    <!-- Items will be injected by JS -->
+                                </div>
+                            </div>
+
+                            <div class="finance-section">
+                                <div class="section-header-row">
+                                    <h3>支出内訳 (その他)</h3>
+                                    <button class="btn-icon add-sub-item"
+                                        onclick="addSubItem('w', 'other-list', 'other-val')"><i
+                                            data-lucide="plus"></i></button>
+                                </div>
+                                <div class="breakdown-list" id="w-other-list">
+                                    <!-- Items will be injected by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </section>
+
+            <!-- Tab: Assets -->
+            <section id="assets" class="tab-content">
+                <div class="card glass">
+                    <div class="section-header-row">
+                        <div class="column-header" style="border:none; margin-bottom:0; padding-bottom:0;">
+                            <i data-lucide="trending-up"></i>
+                            <h2>株式ポートフォリオ</h2>
+                        </div>
+                        <div class="header-actions">
+                            <span class="total-assets-label">評価額合計: <b id="total-assets-value">¥0</b></span>
+                            <button class="btn-primary" onclick="addStockRow()"><i data-lucide="plus"></i>
+                                銘柄を追加</button>
+                        </div>
+                    </div>
+                    <table class="finance-table accent-table">
+                        <thead>
+                            <tr>
+                                <th>銘柄名称/番号</th>
+                                <th>現在株価</th>
+                                <th>保有数量</th>
+                                <th>評価額</th>
+                                <th>損益</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-list">
+                            <!-- JS will populate -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content glass">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-title">予定を登録</h2>
+            <form id="event-form">
+                <input type="hidden" id="event-id">
+                <input type="hidden" id="event-date">
+                <div class="form-group">
+                    <label for="event-title">予定の内容</label>
+                    <input type="text" id="event-title" required placeholder="例：ディナー、会議など">
+                </div>
+                <div class="form-group">
+                    <label for="event-time">時間</label>
+                    <input type="time" id="event-time">
+                </div>
+                <div class="form-group">
+                    <label for="event-person">担当</label>
+                    <select id="event-person">
+                        <option value="husband">夫</option>
+                        <option value="wife">妻</option>
+                        <option value="shared" selected>共通</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="event-memo">メモ (URLは自動でリンクになります)</label>
+                    <textarea id="event-memo" rows="3" placeholder="旅行の計画URLや、持ち物リストなど"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="delete-event" class="btn-danger">削除</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content glass">
+            <span class="close-button" onclick="closeSettings()">&times;</span>
+            <h2>クラウド同期設定 (Supabase)</h2>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Supabaseのプロジェクトを作成し、URLとAnon Keyを入力してください。ペア同士で同じキーを使うことで同期されます。
+            </p>
+            <form id="settings-form">
+                <div class="form-group">
+                    <label>Supabase URL</label>
+                    <input type="text" id="supabase-url" placeholder="https://xxxx.supabase.co">
+                </div>
+                <div class="form-group">
+                    <label>Supabase Anon Key</label>
+                    <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiI...">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-primary">接続して同期</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

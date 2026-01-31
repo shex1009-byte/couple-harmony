@@ -1,0 +1,17 @@
+{
+    "name": "Couple Harmony",
+    "short_name": "Harmony",
+    "description": "Premium Couple Dashboard for Schedule, Finance, and Assets.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#fbbf24",
+    "icons": [
+        {
+            "src": "https://img.icons8.com/glassmorphism/150/sparkling-diamond.png",
+            "sizes": "150x150",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
