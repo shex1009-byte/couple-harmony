@@ -252,7 +252,7 @@ function linkify(text) {
 }
 
 // --- Calendar Logic ---
-let currentMonth = new Date(2026, 1, 1); // 2026 Feb
+let currentMonth = new Date(); // Start from current month
 
 document.getElementById('prev-month').onclick = () => {
     currentMonth.setMonth(currentMonth.getMonth() - 1);
@@ -599,9 +599,12 @@ window.updateTodoText = (p, i, val) => {
 };
 
 // Initial Call
-document.getElementById('current-date').textContent = new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
-}).format(new Date());
+function updateTodayDisplay() {
+    document.getElementById('current-date').textContent = new Intl.DateTimeFormat('ja-JP', {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
+    }).format(new Date());
+}
+updateTodayDisplay();
 
 renderDashboard();
 renderCalendar();
