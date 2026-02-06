@@ -107,7 +107,12 @@ function saveEvents() {
 
 // --- Tab Switching Logic ---
 window.toggleSidebar = () => {
-    document.querySelector('.sidebar').classList.toggle('collapsed');
+    const sidebar = document.querySelector('.sidebar');
+    if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('active');
+    } else {
+        sidebar.classList.toggle('collapsed');
+    }
 };
 
 const navLinks = document.querySelectorAll('.nav-links li');
@@ -129,6 +134,11 @@ navLinks.forEach(link => {
         if (tabId === 'calendar') renderCalendar();
         if (tabId === 'dashboard') renderDashboard();
         if (tabId === 'finance' || tabId === 'assets') updateFinanceAll();
+
+        // Close sidebar on mobile after selection
+        if (window.innerWidth <= 768) {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
     });
 });
 

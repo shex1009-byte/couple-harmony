@@ -68,9 +68,16 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="top-bar">
-                <h1 id="page-title">ダッシュボード</h1>
+                <div class="header-left">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <h1 id="page-title">ダッシュボード</h1>
+                </div>
                 <div class="current-date" id="current-date">2026年 1月 30日 (金)</div>
             </header>
+
+            <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
             <!-- Tab: Dashboard -->
             <section id="dashboard" class="tab-content active">
