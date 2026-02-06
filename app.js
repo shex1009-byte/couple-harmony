@@ -1,5 +1,5 @@
 // --- Cloud Sync (Supabase) Setup ---
-let supabase = null;
+let client = null; // Rename from 'supabase' to avoid shadowing global object
 const cloudStatusEl = document.getElementById('cloud-status');
 
 function updateSyncStatus(status) {
@@ -22,7 +22,8 @@ async function initSupabase() {
     const key = localStorage.getItem('harmony_supabase_key');
     if (url && key) {
         try {
-            supabase = supabase.createClient(url, key);
+            // Use the global 'supabase' object provided by the CDN
+            client = supabase.createClient(url, key);
             updateSyncStatus('online');
             await pullCloudData();
             setupRealtimeSubscriptions();
@@ -34,8 +35,8 @@ async function initSupabase() {
 }
 
 async function pullCloudData() {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('harmony_data').select('*');
+    if (!client) return;
+    const { data, error } = await client.from('harmony_data').select('*');
     if (error) return updateSyncStatus('error');
 
     data.forEach(item => {
@@ -43,30 +44,36 @@ async function pullCloudData() {
         if (item.key === 'finance') financeData = item.content;
         if (item.key === 'stocks') stocks = item.content;
         if (item.key === 'todos') todos = item.content;
-        if (item.key === 'memo') document.getElementById('dashboard-memo').value = item.content;
+        const memoArea = document.getElementById('dashboard-memo');
+        if (item.key === 'memo' && memoArea) memoArea.value = item.content;
     });
 
     refreshAllUI();
 }
 
 async function pushCloudData(key, content) {
-    if (!supabase) return;
-    await supabase.from('harmony_data').upsert({ key, content, updated_at: new Date() });
+    if (!client) return;
+    try {
+        await client.from('harmony_data').upsert({ key, content, updated_at: new Date() });
+    } catch (e) {
+        console.error("Cloud push failed", e);
+    }
 }
 
 function setupRealtimeSubscriptions() {
-    supabase.channel('custom-all-channel')
+    client.channel('custom-all-channel')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'harmony_data' }, (payload) => {
-            pullCloudData(); // Refresh on any change
+            pullCloudData();
         })
         .subscribe();
 }
 
 function refreshAllUI() {
-    if (document.getElementById('calendar').classList.contains('active')) renderCalendar();
-    if (document.getElementById('dashboard').classList.contains('active')) renderDashboard();
-    initFinance();
-    initTodo();
+    renderDashboard();
+    renderCalendar();
+    renderStocks();
+    updateFinanceAll();
+    ['husband', 'wife', 'shared'].forEach(renderTodos);
 }
 
 // Settings Modal UI
@@ -117,6 +124,7 @@ navLinks.forEach(link => {
 
         if (tabId === 'calendar') renderCalendar();
         if (tabId === 'dashboard') renderDashboard();
+        if (tabId === 'finance' || tabId === 'assets') updateFinanceAll();
     });
 });
 
@@ -186,34 +194,41 @@ deleteBtn.onclick = () => {
 
 // --- Dashboard Logic ---
 function renderDashboard() {
-    const list = document.getElementById('today-schedule');
-    if (!list) return;
-    list.innerHTML = '';
+    const renderList = (id, dateOffset) => {
+        const list = document.getElementById(id);
+        if (!list) return;
+        list.innerHTML = '';
 
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const todayEvents = events.filter(e => e.date === todayStr);
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + dateOffset);
+        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+        const dayEvents = events.filter(e => e.date === dateStr);
 
-    if (todayEvents.length === 0) {
-        list.innerHTML = '<p style="color:var(--text-secondary); padding: 10px;">今日の予定はありません</p>';
-    }
+        if (dayEvents.length === 0) {
+            list.innerHTML = `<p style="color:var(--text-secondary); padding: 10px;">${dateOffset === 0 ? '今日' : '明日'}の予定はありません</p>`;
+            return;
+        }
 
-    todayEvents.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00')).forEach(ev => {
-        const item = document.createElement('div');
-        item.className = `schedule-item ${ev.person}`;
-        const memoHtml = ev.memo ? `<div class="item-memo">${linkify(ev.memo)}</div>` : '';
-        item.innerHTML = `
-            <span class="time">${ev.time || '--:--'}</span>
-            <div class="event-details">
-                <span class="event-title">${ev.title}</span>
-                ${memoHtml}
-            </div>
-        `;
-        item.onclick = (e) => {
-            if (e.target.tagName !== 'A') openModal(ev.date, ev.id);
-        };
-        list.appendChild(item);
-    });
+        dayEvents.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00')).forEach(ev => {
+            const item = document.createElement('div');
+            item.className = `schedule-item ${ev.person}`;
+            const memoHtml = ev.memo ? `<div class="item-memo">${linkify(ev.memo)}</div>` : '';
+            item.innerHTML = `
+                <span class="time">${ev.time || '--:--'}</span>
+                <div class="event-details">
+                    <span class="event-title">${ev.title}</span>
+                    ${memoHtml}
+                </div>
+            `;
+            item.onclick = (e) => {
+                if (e.target.tagName !== 'A') openModal(ev.date, ev.id);
+            };
+            list.appendChild(item);
+        });
+    };
+
+    renderList('today-schedule', 0);
+    renderList('tomorrow-schedule', 1);
 }
 
 function linkify(text) {
@@ -356,80 +371,85 @@ if (memoArea) {
 }
 
 // --- Finance Logic (Enhanced) ---
-function initFinance() {
-    const renderSection = (p, type, listId, valClass) => {
-        const list = document.getElementById(listId);
-        if (!list) return;
-        list.innerHTML = '';
-        const dataKey = listId.includes('savings') ? 'savings' : (listId.includes('fixed') ? 'fixed' : 'other');
+const renderFinanceSection = (p, listId, valClass) => {
+    const list = document.getElementById(listId);
+    if (!list) return;
+    list.innerHTML = '';
+    const dataKey = listId.includes('savings') ? 'savings' : (listId.includes('fixed') ? 'fixed' : 'other');
 
-        financeData[p][dataKey].forEach((item, index) => {
-            const row = document.createElement('div');
-            row.className = 'breakdown-row';
-            row.innerHTML = `
-                <input type="text" value="${item.p}" oninput="updateFinanceItem('${p}','${dataKey}',${index},'p',this.value)">
-                <input type="number" value="${item.v}" class="sub-input ${valClass}" oninput="updateFinanceItem('${p}','${dataKey}',${index},'v',this.value)">
-                <button class="btn-icon delete" onclick="removeFinanceItem('${p}','${dataKey}',${index})"><i data-lucide="trash-2"></i></button>
-            `;
-            list.appendChild(row);
-        });
-        lucide.createIcons();
-    };
+    financeData[p][dataKey].forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'breakdown-row';
+        row.innerHTML = `
+            <input type="text" value="${item.p}" oninput="updateFinanceItem('${p}','${dataKey}',${index},'p',this.value)">
+            <input type="number" value="${item.v}" class="sub-input ${valClass}" oninput="updateFinanceItem('${p}','${dataKey}',${index},'v',this.value)">
+            <button class="btn-icon delete" onclick="removeFinanceItem('${p}','${dataKey}',${index})"><i data-lucide="trash-2"></i></button>
+        `;
+        list.appendChild(row);
+    });
+    lucide.createIcons();
+};
 
-    const updateAll = () => {
-        ['h', 'w'].forEach(p => {
-            document.getElementById(`${p}-income`).value = financeData[p].income;
-            renderSection(p, `${p}-savings-list`, `${p}-savings-list`, 'save-val');
-            renderSection(p, `${p}-fixed-list`, `${p}-fixed-list`, 'fixed-val');
-            renderSection(p, `${p}-other-list`, `${p}-other-list`, 'other-val');
-            calculateFinance(p);
-        });
-        renderStocks();
-    };
-
-    window.addSubItem = (p, listId, valClass) => {
-        const dataKey = listId.includes('savings') ? 'savings' : (listId.includes('fixed') ? 'fixed' : 'other');
-        financeData[p][dataKey].push({ p: '', v: 0 });
-        saveAllData();
-        updateAll();
-    };
-
-    window.removeFinanceItem = (p, dataKey, index) => {
-        financeData[p][dataKey].splice(index, 1);
-        saveAllData();
-        updateAll();
-    };
-
-    window.updateFinanceItem = (p, dataKey, index, field, value) => {
-        financeData[p][dataKey][index][field] = field === 'v' ? (parseInt(value) || 0) : value;
-        saveAllData();
+const updateFinanceAll = () => {
+    ['h', 'w'].forEach(p => {
+        const incEl = document.getElementById(`${p}-income`);
+        if (incEl) incEl.value = financeData[p].income;
+        renderFinanceSection(p, `${p}-savings-list`, 'save-val');
+        renderFinanceSection(p, `${p}-fixed-list`, 'fixed-val');
+        renderFinanceSection(p, `${p}-other-list`, 'other-val');
         calculateFinance(p);
-    };
+    });
+    renderStocks();
+};
 
-    window.calculateFinance = (p) => {
-        const income = parseInt(document.getElementById(`${p}-income`).value) || 0;
-        financeData[p].income = income;
+window.addSubItem = (p, listId, valClass) => {
+    const dataKey = listId.includes('savings') ? 'savings' : (listId.includes('fixed') ? 'fixed' : 'other');
+    financeData[p][dataKey].push({ p: '', v: 0 });
+    saveAllData();
+    updateFinanceAll();
+};
 
-        const sumKey = (key) => financeData[p][key].reduce((a, b) => a + b.v, 0);
-        const fixedT = sumKey('fixed');
-        const otherT = sumKey('other');
-        const savingsT = sumKey('savings');
-        const exp = fixedT + otherT + savingsT;
-        const balance = income - exp;
+window.removeFinanceItem = (p, dataKey, index) => {
+    financeData[p][dataKey].splice(index, 1);
+    saveAllData();
+    updateFinanceAll();
+};
 
-        document.getElementById(`${p}-fixed-total`).textContent = `¥${fixedT.toLocaleString()}`;
-        document.getElementById(`${p}-other-total`).textContent = `¥${otherT.toLocaleString()}`;
-        document.getElementById(`${p}-savings-total`).textContent = `¥${savingsT.toLocaleString()}`;
-        document.getElementById(`${p}-expenditure`).textContent = `¥${exp.toLocaleString()}`;
+window.updateFinanceItem = (p, dataKey, index, field, value) => {
+    financeData[p][dataKey][index][field] = field === 'v' ? (parseInt(value) || 0) : value;
+    saveAllData();
+    calculateFinance(p);
+};
 
-        const bEl = document.getElementById(`${p}-balance`);
+window.calculateFinance = (p) => {
+    const incEl = document.getElementById(`${p}-income`);
+    if (!incEl) return;
+    const income = parseInt(incEl.value) || 0;
+    financeData[p].income = income;
+
+    const sumKey = (key) => financeData[p][key].reduce((a, b) => a + b.v, 0);
+    const fixedT = sumKey('fixed');
+    const otherT = sumKey('other');
+    const savingsT = sumKey('savings');
+    const exp = fixedT + otherT + savingsT;
+    const balance = income - exp;
+
+    const fixedEl = document.getElementById(`${p}-fixed-total`);
+    const otherEl = document.getElementById(`${p}-other-total`);
+    const savingsEl = document.getElementById(`${p}-savings-total`);
+    const expEl = document.getElementById(`${p}-expenditure`);
+    if (fixedEl) fixedEl.textContent = `¥${fixedT.toLocaleString()}`;
+    if (otherEl) otherEl.textContent = `¥${otherT.toLocaleString()}`;
+    if (savingsEl) savingsEl.textContent = `¥${savingsT.toLocaleString()}`;
+    if (expEl) expEl.textContent = `¥${exp.toLocaleString()}`;
+
+    const bEl = document.getElementById(`${p}-balance`);
+    if (bEl) {
         bEl.textContent = `¥${balance.toLocaleString()}`;
         bEl.className = 'value-display ' + (balance >= 0 ? 'success' : 'warning');
-        saveAllData();
-    };
-
-    updateAll();
-}
+    }
+    saveAllData();
+};
 
 // --- Stock Logic ---
 const MOCK_PRICES = {
@@ -522,51 +542,47 @@ window.fetchStock = async (tickerVal, i, explicit = false) => {
 };
 
 // --- Todo Logic ---
-function initTodo() {
-    const renderTodos = (p) => {
-        const list = document.getElementById(`todo-${p}`);
-        if (!list) return;
-        list.innerHTML = '';
-        todos[p].forEach((todo, i) => {
-            const li = document.createElement('li');
-            if (todo.done) li.classList.add('completed');
-            li.innerHTML = `
-                <div class="todo-left">
-                    <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo('${p}', ${i})">
-                    <input type="text" class="todo-text-input" value="${todo.text}" oninput="updateTodoText('${p}', ${i}, this.value)">
-                </div>
-                <button class="btn-icon delete" onclick="deleteTodo('${p}', ${i})"><i data-lucide="x"></i></button>
-            `;
-            list.appendChild(li);
-        });
-        lucide.createIcons();
-    };
+const renderTodos = (p) => {
+    const list = document.getElementById(`todo-${p}`);
+    if (!list) return;
+    list.innerHTML = '';
+    todos[p].forEach((todo, i) => {
+        const li = document.createElement('li');
+        if (todo.done) li.classList.add('completed');
+        li.innerHTML = `
+            <div class="todo-left">
+                <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo('${p}', ${i})">
+                <input type="text" class="todo-text-input" value="${todo.text}" oninput="updateTodoText('${p}', ${i}, this.value)">
+            </div>
+            <button class="btn-icon delete" onclick="deleteTodo('${p}', ${i})"><i data-lucide="x"></i></button>
+        `;
+        list.appendChild(li);
+    });
+    lucide.createIcons();
+};
 
-    window.addTodo = (p) => {
-        todos[p].push({ text: '', done: false });
-        saveAllData();
-        renderTodos(p);
-    };
+window.addTodo = (p) => {
+    todos[p].push({ text: '', done: false });
+    saveAllData();
+    renderTodos(p);
+};
 
-    window.deleteTodo = (p, i) => {
-        todos[p].splice(i, 1);
-        saveAllData();
-        renderTodos(p);
-    };
+window.deleteTodo = (p, i) => {
+    todos[p].splice(i, 1);
+    saveAllData();
+    renderTodos(p);
+};
 
-    window.toggleTodo = (p, i) => {
-        todos[p][i].done = !todos[p][i].done;
-        saveAllData();
-        renderTodos(p);
-    };
+window.toggleTodo = (p, i) => {
+    todos[p][i].done = !todos[p][i].done;
+    saveAllData();
+    renderTodos(p);
+};
 
-    window.updateTodoText = (p, i, val) => {
-        todos[p][i].text = val;
-        saveAllData();
-    };
-
-    ['husband', 'wife', 'shared'].forEach(renderTodos);
-}
+window.updateTodoText = (p, i, val) => {
+    todos[p][i].text = val;
+    saveAllData();
+};
 
 // Initial Call
 document.getElementById('current-date').textContent = new Intl.DateTimeFormat('ja-JP', {
@@ -574,7 +590,10 @@ document.getElementById('current-date').textContent = new Intl.DateTimeFormat('j
 }).format(new Date());
 
 renderDashboard();
-initFinance();
-initTodo();
+renderCalendar();
+updateFinanceAll();
+renderTodos('husband');
+renderTodos('wife');
+renderTodos('shared');
 initSupabase();
 lucide.createIcons();

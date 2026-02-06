@@ -46,10 +46,6 @@
                     <i data-lucide="wallet"></i>
                     <span>家計管理</span>
                 </li>
-                <li data-tab="assets">
-                    <i data-lucide="trending-up"></i>
-                    <span>資産運用</span>
-                </li>
             </ul>
             <div class="sidebar-footer">
                 <div class="cloud-status" id="cloud-status">
@@ -80,7 +76,14 @@
                     <div class="card glass highlight-card">
                         <h3>今日の予定</h3>
                         <div class="schedule-list" id="today-schedule">
-                            <!-- JS will populate from calendar events -->
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+
+                    <div class="card glass highlight-card">
+                        <h3>明日の予定</h3>
+                        <div class="schedule-list" id="tomorrow-schedule">
+                            <!-- JS will populate -->
                         </div>
                     </div>
 
@@ -280,7 +283,7 @@
                                 <div class="section-header-row">
                                     <h3>支出内訳 (その他)</h3>
                                     <button class="btn-icon add-sub-item"
-                                        onclick="addSubItem('w', 'other-list', 'other-val')"><i
+                                        onclick="addSubItem('w', 'w-other-list', 'other-val')"><i
                                             data-lucide="plus"></i></button>
                                 </div>
                                 <div class="breakdown-list" id="w-other-list">
@@ -291,36 +294,6 @@
                     </div>
             </section>
 
-            <!-- Tab: Assets -->
-            <section id="assets" class="tab-content">
-                <div class="card glass">
-                    <div class="section-header-row">
-                        <div class="column-header" style="border:none; margin-bottom:0; padding-bottom:0;">
-                            <i data-lucide="trending-up"></i>
-                            <h2>株式ポートフォリオ</h2>
-                        </div>
-                        <div class="header-actions">
-                            <span class="total-assets-label">評価額合計: <b id="total-assets-value">¥0</b></span>
-                            <button class="btn-primary" onclick="addStockRow()"><i data-lucide="plus"></i>
-                                銘柄を追加</button>
-                        </div>
-                    </div>
-                    <table class="finance-table accent-table">
-                        <thead>
-                            <tr>
-                                <th>銘柄名称/番号</th>
-                                <th>現在株価</th>
-                                <th>保有数量</th>
-                                <th>評価額</th>
-                                <th>損益</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stock-list">
-                            <!-- JS will populate -->
-                        </tbody>
-                    </table>
-                </div>
             </section>
 
         </main>
