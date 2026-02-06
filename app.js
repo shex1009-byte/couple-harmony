@@ -106,6 +106,10 @@ function saveEvents() {
 }
 
 // --- Tab Switching Logic ---
+window.toggleSidebar = () => {
+    document.querySelector('.sidebar').classList.toggle('collapsed');
+};
+
 const navLinks = document.querySelectorAll('.nav-links li');
 const tabContents = document.querySelectorAll('.tab-content');
 const pageTitle = document.getElementById('page-title');
