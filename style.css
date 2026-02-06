@@ -45,6 +45,13 @@ body {
     flex-direction: column;
     padding: 2rem 1rem;
     backdrop-filter: blur(20px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+    padding: 2rem 0.5rem;
 }
 
 .logo {
@@ -97,6 +104,54 @@ body {
 .nav-links li i {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .nav-links span,
+.sidebar.collapsed .cloud-status span,
+.sidebar.collapsed .sidebar-footer {
+    display: none;
+}
+
+.sidebar.collapsed .logo {
+    justify-content: center;
+    padding-left: 0;
+}
+
+.sidebar.collapsed .nav-links li {
+    justify-content: center;
+    padding: 12px;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+    position: absolute;
+    right: -15px;
+    top: 30px;
+    width: 30px;
+    height: 30px;
+    background: var(--accent-gold);
+    border: none;
+    border-radius: 50%;
+    color: var(--bg-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    transform: scale(1.1);
+    background: white;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    right: -15px;
+    transform: rotate(180deg);
 }
 
 .sidebar-footer {
@@ -174,6 +229,21 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 5px;
 }
 
 .top-bar h1 {
@@ -950,6 +1020,262 @@ body {
     text-decoration: line-through;
 }
 
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+    }
+
+    .app-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Sidebar to Drawer on Mobile */
+    .sidebar {
+        width: 260px;
+        height: 100vh;
+        position: fixed;
+        left: -260px;
+        top: 0;
+        z-index: 2000;
+        background: rgba(15, 23, 42, 0.98);
+        transition: transform 0.4s ease;
+        padding-top: 1rem;
+        border-right: 1px solid var(--glass-border);
+        flex-direction: column;
+        /* Ensure column layout for drawer */
+        justify-content: flex-start;
+        /* Align items to the top */
+        align-items: flex-start;
+        /* Align items to the start */
+        padding-left: 1rem;
+        /* Add padding for content */
+        padding-right: 1rem;
+    }
+
+    .sidebar.active {
+        transform: translateX(260px);
+    }
+
+    /* Show logo and footer in drawer */
+    .logo {
+        display: flex;
+        margin-bottom: 2rem;
+        width: 100%;
+        /* Adjust as needed */
+        justify-content: center;
+        /* Center logo in drawer */
+    }
+
+    .sidebar-footer {
+        display: flex;
+        width: 100%;
+        /* Adjust as needed */
+        justify-content: center;
+        /* Center footer in drawer */
+        margin-top: auto;
+        /* Push to bottom */
+        padding-bottom: 1rem;
+    }
+
+    /* Hide PC toggle on mobile */
+    .sidebar-toggle {
+        display: none;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1500;
+    }
+
+    .sidebar.active~.sidebar-overlay {
+        display: block;
+    }
+
+    .nav-links {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        /* Ensure nav links take full width */
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-links li {
+        flex-direction: row;
+        /* Revert to row for individual links in drawer */
+        gap: 12px;
+        /* Adjust gap */
+        padding: 10px 12px;
+        /* Adjust padding */
+        margin-bottom: 8px;
+        /* Add margin between links */
+        font-size: 1rem;
+        /* Adjust font size */
+        border-radius: 8px;
+        flex: none;
+        /* Remove flex grow */
+        justify-content: flex-start;
+        /* Align text to start */
+    }
+
+    .nav-links li i {
+        width: 24px;
+        /* Adjust icon size */
+        height: 24px;
+    }
+
+    .nav-links li span {
+        display: block;
+    }
+
+    /* Main Content Adjustments */
+    .main-content {
+        padding: 1rem;
+        padding-bottom: 1rem;
+        /* Remove extra padding for bottom nav */
+    }
+
+    .top-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .top-bar h1 {
+        font-size: 1.2rem;
+    }
+
+    .current-date {
+        font-size: 0.8rem;
+    }
+
+    /* Grid Layouts to 1 Column */
+    .grid-container,
+    .dashboard-grid,
+    .finance-grid {
+        grid-template-columns: 1fr !important;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .card {
+        padding: 1.2rem;
+        background: rgba(15, 23, 42, 0.8);
+        /* Darker for better contrast on mobile */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Calendar Optimization */
+    .full-calendar {
+        padding: 0.2rem;
+    }
+
+    .calendar-grid {
+        gap: 1px;
+    }
+
+    .calendar-day {
+        min-height: 60px;
+        padding: 2px;
+    }
+
+    .day-number {
+        font-size: 0.7rem;
+    }
+
+    .event-tiny {
+        font-size: 0.6rem;
+        padding: 1px 3px;
+        margin-bottom: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Finance & Column Tweaks */
+    .finance-column {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .finance-column:last-child {
+        margin-bottom: 0;
+    }
+
+    .finance-row {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .input-with-label {
+        width: 100%;
+    }
+
+    .fin-input {
+        flex-grow: 1;
+    }
+
+    .breakdown-row {
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .breakdown-row input[type="text"] {
+        flex: 2;
+        padding: 8px;
+    }
+
+    .breakdown-row input[type="number"] {
+        flex: 1;
+        padding: 8px;
+    }
+
+    /* Modal Optimization */
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+        margin: 5% auto;
+        position: relative;
+        top: 0;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .modal-footer button {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
 /* Dashboard Memo Refinement */
 #dashboard-memo {
     width: 100%;
@@ -971,36 +1297,4 @@ body {
     border-color: var(--accent-gold);
     outline: none;
     box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
-}
-
-/* Asset Tab Styles */
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
-.total-assets-label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-#total-assets-value {
-    color: var(--accent-gold);
-    font-size: 1.5rem;
-    margin-left: 8px;
-}
-
-.stock-price-cell {
-    min-width: 140px;
-}
-
-.price-val {
-    font-weight: 600;
-    min-width: 80px;
-    display: inline-block;
-}
-
-.refresh-btn:active {
-    transform: scale(0.95);
 }
