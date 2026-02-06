@@ -1,9 +1,9 @@
-const CACHE_NAME = 'harmony-v2';
+const CACHE_NAME = 'harmony-v3';
 const ASSETS = [
     './',
-    './index.html',
-    './style.css',
-    './app.js',
+    './index.html?v=2',
+    './style.css?v=2',
+    './app.js?v=2',
     './manifest.json'
 ];
 
@@ -16,11 +16,14 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
     e.waitUntil(
-        caches.keys().then((keys) => {
-            return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-            );
-        })
+        Promise.all([
+            caches.keys().then((keys) => {
+                return Promise.all(
+                    keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+                );
+            }),
+            self.clients.claim()
+        ])
     );
 });
 
