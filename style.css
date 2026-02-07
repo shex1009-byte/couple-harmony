@@ -10,6 +10,12 @@
     --wife-color: #ec4899;
     --shared-color: #8b5cf6;
     --glass-border: rgba(255, 255, 255, 0.1);
+    --saturday-color: #7dd3fc;
+    /* 明るい水色 */
+    --sunday-color: #f87171;
+    /* 明るい赤色 */
+    --holiday-color: #ef4444;
+    /* 鮮やかな赤色 */
 }
 
 * {
@@ -1297,4 +1303,123 @@ body {
     border-color: var(--accent-gold);
     outline: none;
     box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
+}
+
+/* Calendar Day Colors */
+.calendar-day-header.sunday,
+.calendar-day.sunday .day-number,
+.calendar-day.sunday {
+    color: var(--sunday-color) !important;
+}
+
+.calendar-day-header.saturday,
+.calendar-day.saturday .day-number,
+.calendar-day.saturday {
+    color: var(--saturday-color) !important;
+}
+
+.calendar-day.holiday .day-number,
+.calendar-day.holiday {
+    color: var(--holiday-color) !important;
+}
+
+.holiday-name {
+    font-size: 0.65rem;
+    margin-left: 5px;
+    font-weight: 300;
+    opacity: 0.8;
+}
+
+/* Mobile Agenda Styles */
+@media (max-width: 768px) {
+    .calendar-grid {
+        display: none !important;
+    }
+
+    .mobile-agenda {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        padding: 5px;
+    }
+
+    .agenda-day-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border-left: 5px solid transparent;
+        transition: transform 0.2s;
+    }
+
+    .agenda-day-card:active {
+        transform: scale(0.98);
+    }
+
+    .agenda-day-card.sunday {
+        border-left-color: var(--sunday-color);
+    }
+
+    .agenda-day-card.saturday {
+        border-left-color: var(--saturday-color);
+    }
+
+    .agenda-day-card.holiday {
+        border-left-color: var(--holiday-color);
+    }
+
+    .agenda-date {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+    }
+
+    .agenda-date .num {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .agenda-date .dow {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .agenda-day-card.sunday .num,
+    .agenda-day-card.sunday .dow {
+        color: var(--sunday-color) !important;
+    }
+
+    .agenda-day-card.saturday .num,
+    .agenda-day-card.saturday .dow {
+        color: var(--saturday-color) !important;
+    }
+
+    .agenda-day-card.holiday .num {
+        color: var(--holiday-color) !important;
+    }
+
+    .holiday-label {
+        background: var(--holiday-color);
+        color: white;
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: auto;
+    }
+
+    .agenda-events {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .event-tiny {
+        font-size: 0.9rem !important;
+        padding: 8px 12px !important;
+        border-radius: 8px !important;
+        white-space: normal !important;
+    }
 }

@@ -41,8 +41,6 @@ async function pullCloudData() {
 
     data.forEach(item => {
         if (item.key === 'events') events = item.content;
-        if (item.key === 'finance') financeData = item.content;
-        if (item.key === 'stocks') stocks = item.content;
         if (item.key === 'todos') todos = item.content;
         const memoArea = document.getElementById('dashboard-memo');
         if (item.key === 'memo' && memoArea) memoArea.value = item.content;
@@ -71,8 +69,6 @@ function setupRealtimeSubscriptions() {
 function refreshAllUI() {
     renderDashboard();
     renderCalendar();
-    renderStocks();
-    updateFinanceAll();
     ['husband', 'wife', 'shared'].forEach(renderTodos);
 }
 
@@ -133,7 +129,6 @@ navLinks.forEach(link => {
 
         if (tabId === 'calendar') renderCalendar();
         if (tabId === 'dashboard') renderDashboard();
-        if (tabId === 'finance' || tabId === 'assets') updateFinanceAll();
 
         // Close sidebar on mobile after selection
         if (window.innerWidth <= 768) {
@@ -252,7 +247,21 @@ function linkify(text) {
 }
 
 // --- Calendar Logic ---
-let currentMonth = new Date(); // Start from current month
+// --- Calendar Logic ---
+let currentMonth = new Date();
+
+function getHolidayName(date) {
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const holidays = {
+        '1/1': '元日', '2/11': '建国記念の日', '2/23': '天皇誕生日',
+        '3/20': '春分の日', '3/21': '春分の日', // approximate
+        '4/29': '昭和の日', '5/3': '憲法記念日', '5/4': 'みどりの日',
+        '5/5': 'こどもの日', '7/20': '海の日', '8/11': '山の日',
+        '9/23': '秋分の日', '11/3': '文化の日', '11/23': '勤労感謝の日'
+    };
+    return holidays[`${m}/${d}`] || null;
+}
 
 document.getElementById('prev-month').onclick = () => {
     currentMonth.setMonth(currentMonth.getMonth() - 1);
@@ -268,99 +277,96 @@ function renderCalendar() {
     const display = document.getElementById('month-display');
     if (!grid) return;
     grid.innerHTML = '';
+    const isMobile = window.innerWidth <= 768;
 
     display.textContent = `${currentMonth.getFullYear()}年 ${currentMonth.getMonth() + 1}月`;
 
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    days.forEach(day => {
-        const header = document.createElement('div');
-        header.className = 'calendar-day-header';
-        header.textContent = day;
-        grid.appendChild(header);
-    });
-
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
     const lastDate = new Date(year, month + 1, 0).getDate();
 
-    // Fill Empty slots
-    for (let i = 0; i < firstDay; i++) {
-        grid.appendChild(document.createElement('div'));
-    }
-
-    // Fill Days
-    for (let d = 1; d <= lastDate; d++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day';
-
-        const today = new Date();
-        if (year === today.getFullYear() && month === today.getMonth() && d === today.getDate()) {
-            dayDiv.classList.add('today');
-        }
-
-        dayDiv.innerHTML = `<span class="day-number">${d}</span><div class="day-events"></div>`;
-
-        const dayEvents = events.filter(e => e.date === dateStr);
-        const eventsContainer = dayDiv.querySelector('.day-events');
-
-        dayEvents.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00')).forEach(ev => {
-            const evEl = document.createElement('div');
-            evEl.className = `event-tiny ${ev.person}`;
-            evEl.draggable = true;
-            const timeDisplay = ev.time ? `<span class="tiny-time">${ev.time}</span> ` : '';
-            evEl.innerHTML = `${timeDisplay}${ev.title}`;
-
-            evEl.ondragstart = (e) => {
-                e.dataTransfer.setData('text/plain', ev.id);
-                evEl.style.opacity = '0.5';
-            };
-            evEl.ondragend = () => {
-                evEl.style.opacity = '1';
-            };
-
-            evEl.onclick = (e) => {
-                e.stopPropagation();
-                openModal(dateStr, ev.id);
-            };
-            eventsContainer.appendChild(evEl);
+    if (!isMobile) {
+        grid.className = 'calendar-grid';
+        grid.style.display = 'grid';
+        const daysHead = ['日', '月', '火', '水', '木', '金', '土'];
+        daysHead.forEach((day, i) => {
+            const h = document.createElement('div');
+            h.className = 'calendar-day-header';
+            if (i === 0) h.classList.add('sunday');
+            if (i === 6) h.classList.add('saturday');
+            h.textContent = day;
+            grid.appendChild(h);
         });
 
-        dayDiv.ondragover = (e) => {
-            e.preventDefault();
-            dayDiv.style.background = 'rgba(255, 255, 255, 0.1)';
-        };
-        dayDiv.ondragleave = () => {
-            dayDiv.style.background = '';
-        };
-        dayDiv.ondrop = (e) => {
-            e.preventDefault();
-            dayDiv.style.background = '';
-            const eventId = e.dataTransfer.getData('text/plain');
-            const eventIndex = events.findIndex(ev => ev.id == eventId);
-            if (eventIndex !== -1) {
-                events[eventIndex].date = dateStr;
-                saveEvents();
-                renderCalendar();
-                renderDashboard();
-            }
-        };
+        const firstDay = new Date(year, month, 1).getDay();
+        for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
 
-        dayDiv.onclick = () => openModal(dateStr);
-        grid.appendChild(dayDiv);
+        for (let d = 1; d <= lastDate; d++) {
+            const date = new Date(year, month, d);
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'calendar-day';
+
+            const dayOfWeek = date.getDay();
+            const holiday = getHolidayName(date);
+            if (dayOfWeek === 0) dayDiv.classList.add('sunday');
+            if (dayOfWeek === 6) dayDiv.classList.add('saturday');
+            if (holiday) dayDiv.classList.add('holiday');
+
+            const today = new Date();
+            if (year === today.getFullYear() && month === today.getMonth() && d === today.getDate()) dayDiv.classList.add('today');
+
+            dayDiv.innerHTML = `<span class="day-number">${d}${holiday ? `<span class="holiday-name">${holiday}</span>` : ''}</span><div class="day-events"></div>`;
+            renderDayEvents(dayDiv.querySelector('.day-events'), dateStr);
+            dayDiv.onclick = () => openModal(dateStr);
+            grid.appendChild(dayDiv);
+        }
+    } else {
+        grid.className = 'mobile-agenda';
+        grid.style.display = 'flex';
+        for (let d = 1; d <= lastDate; d++) {
+            const date = new Date(year, month, d);
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+            const holiday = getHolidayName(date);
+
+            const dayCard = document.createElement('div');
+            dayCard.className = 'agenda-day-card';
+            if (date.getDay() === 0) dayCard.classList.add('sunday');
+            if (date.getDay() === 6) dayCard.classList.add('saturday');
+            if (holiday) dayCard.classList.add('holiday');
+
+            dayCard.innerHTML = `
+                <div class="agenda-date">
+                    <span class="num">${d}</span>
+                    <span class="dow">${dayOfWeek}</span>
+                    ${holiday ? `<span class="holiday-label">${holiday}</span>` : ''}
+                </div>
+                <div class="agenda-events"></div>
+            `;
+            renderDayEvents(dayCard.querySelector('.agenda-events'), dateStr);
+            dayCard.onclick = () => openModal(dateStr);
+            grid.appendChild(dayCard);
+        }
     }
 }
 
+function renderDayEvents(container, dateStr) {
+    const dayEvents = events.filter(e => e.date === dateStr);
+    dayEvents.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00')).forEach(ev => {
+        const evEl = document.createElement('div');
+        evEl.className = `event-tiny ${ev.person}`;
+        const timeDisplay = ev.time ? `<span class="tiny-time">${ev.time}</span> ` : '';
+        evEl.innerHTML = `${timeDisplay}${ev.title}`;
+        evEl.onclick = (e) => {
+            e.stopPropagation();
+            openModal(dateStr, ev.id);
+        };
+        container.appendChild(evEl);
+    });
+}
+
 // --- Data Management (Extras) ---
-let financeData = JSON.parse(localStorage.getItem('harmony_finance')) || {
-    h: { income: 325000, savings: [{ p: '積立NISA', v: 100000 }, { p: '現金貯金', v: 20000 }, { p: '児童手当', v: 15000 }], fixed: [{ p: 'スマホ代', v: 5500 }, { p: '家賃', v: 141390 }], other: [{ p: 'コンタクト', v: 2000 }, { p: 'タイムズカー', v: 980 }] },
-    w: { income: 230000, savings: [{ p: '積立NISA', v: 50000 }, { p: '帰省貯金', v: 20000 }, { p: '現金貯金', v: 30000 }], fixed: [{ p: '電気・ガス代', v: 17000 }, { p: '水道代', v: 2500 }, { p: 'Wifi & スマホ代', v: 12000 }, { p: '各種保険', v: 4700 }], other: [{ p: 'コンタクト', v: 2000 }, { p: '美容室', v: 8000 }] }
-};
-let stocks = JSON.parse(localStorage.getItem('harmony_stocks')) || [
-    { name: 'S&P500', ticker: 'VOO', price: 82500, qty: 12, prev: 72000 },
-    { name: 'Apple', ticker: 'AAPL', price: 28400, qty: 15, prev: 25400 }
-];
 let todos = JSON.parse(localStorage.getItem('harmony_todos')) || {
     husband: [{ text: 'ゴミ出し', done: false }, { text: 'クリーニング出し', done: false }],
     wife: [{ text: '週末の予約', done: true }, { text: '植物の水やり', done: false }],
@@ -368,12 +374,12 @@ let todos = JSON.parse(localStorage.getItem('harmony_todos')) || {
 };
 
 function saveAllData() {
-    localStorage.setItem('harmony_finance', JSON.stringify(financeData));
-    localStorage.setItem('harmony_stocks', JSON.stringify(stocks));
     localStorage.setItem('harmony_todos', JSON.stringify(todos));
-    pushCloudData('finance', financeData);
-    pushCloudData('stocks', stocks);
+    const memoValue = document.getElementById('dashboard-memo')?.value || "";
+    localStorage.setItem('harmony_memo', memoValue);
+
     pushCloudData('todos', todos);
+    pushCloudData('memo', memoValue);
 }
 
 // Quick Memo Sync
@@ -385,176 +391,6 @@ if (memoArea) {
 }
 
 // --- Finance Logic (Enhanced) ---
-const renderFinanceSection = (p, listId, valClass) => {
-    const list = document.getElementById(listId);
-    if (!list) return;
-    list.innerHTML = '';
-    const dataKey = listId.includes('savings') ? 'savings' : (listId.includes('fixed') ? 'fixed' : 'other');
-
-    financeData[p][dataKey].forEach((item, index) => {
-        const row = document.createElement('div');
-        row.className = 'breakdown-row';
-        row.innerHTML = `
-            <input type="text" value="${item.p}" oninput="updateFinanceItem('${p}','${dataKey}',${index},'p',this.value)">
-            <input type="number" value="${item.v}" class="sub-input ${valClass}" oninput="updateFinanceItem('${p}','${dataKey}',${index},'v',this.value)">
-            <button class="btn-icon delete" onclick="removeFinanceItem('${p}','${dataKey}',${index})"><i data-lucide="trash-2"></i></button>
-        `;
-        list.appendChild(row);
-    });
-    lucide.createIcons();
-};
-
-const updateFinanceAll = () => {
-    ['h', 'w'].forEach(p => {
-        const incEl = document.getElementById(`${p}-income`);
-        if (incEl) incEl.value = financeData[p].income;
-        renderFinanceSection(p, `${p}-savings-list`, 'save-val');
-        renderFinanceSection(p, `${p}-fixed-list`, 'fixed-val');
-        renderFinanceSection(p, `${p}-other-list`, 'other-val');
-        calculateFinance(p);
-    });
-    renderStocks();
-};
-
-window.addSubItem = (p, listId, valClass) => {
-    const dataKey = listId.includes('savings') ? 'savings' : (listId.includes('fixed') ? 'fixed' : 'other');
-    financeData[p][dataKey].push({ p: '', v: 0 });
-    saveAllData();
-    updateFinanceAll();
-};
-
-window.removeFinanceItem = (p, dataKey, index) => {
-    financeData[p][dataKey].splice(index, 1);
-    saveAllData();
-    updateFinanceAll();
-};
-
-window.updateFinanceItem = (p, dataKey, index, field, value) => {
-    financeData[p][dataKey][index][field] = field === 'v' ? (parseInt(value) || 0) : value;
-    saveAllData();
-    calculateFinance(p);
-};
-
-window.calculateFinance = (p) => {
-    const incEl = document.getElementById(`${p}-income`);
-    if (!incEl) return;
-    const income = parseInt(incEl.value) || 0;
-    financeData[p].income = income;
-
-    const sumKey = (key) => financeData[p][key].reduce((a, b) => a + b.v, 0);
-    const fixedT = sumKey('fixed');
-    const otherT = sumKey('other');
-    const savingsT = sumKey('savings');
-    const exp = fixedT + otherT + savingsT;
-    const balance = income - exp;
-
-    const fixedEl = document.getElementById(`${p}-fixed-total`);
-    const otherEl = document.getElementById(`${p}-other-total`);
-    const savingsEl = document.getElementById(`${p}-savings-total`);
-    const expEl = document.getElementById(`${p}-expenditure`);
-    if (fixedEl) fixedEl.textContent = `¥${fixedT.toLocaleString()}`;
-    if (otherEl) otherEl.textContent = `¥${otherT.toLocaleString()}`;
-    if (savingsEl) savingsEl.textContent = `¥${savingsT.toLocaleString()}`;
-    if (expEl) expEl.textContent = `¥${exp.toLocaleString()}`;
-
-    const bEl = document.getElementById(`${p}-balance`);
-    if (bEl) {
-        bEl.textContent = `¥${balance.toLocaleString()}`;
-        bEl.className = 'value-display ' + (balance >= 0 ? 'success' : 'warning');
-    }
-    saveAllData();
-};
-
-// --- Stock Logic ---
-const MOCK_PRICES = {
-    // US Stocks
-    'AAPL': 28400, 'TSLA': 35000, 'NVDA': 11400, 'MSFT': 65000, 'GOOGL': 24000, 'AMZN': 26000, 'META': 72000, 'VOO': 82500, 'VTI': 38000, 'QQQ': 71000,
-    // JP Stocks (Codes)
-    '7203': 3450, '9984': 8820, '6758': 13500, '8306': 1580, '9432': 185, '6501': 14200, '4063': 6200, '8035': 38500, '4568': 5400,
-    // JP Names (Optional support)
-    'トヨタ': 3450, 'ソフトバンク': 8820, 'ソニー': 13500, '任天堂': 7900, '三菱UFJ': 1580, 'NTT': 185
-};
-
-function renderStocks() {
-    const list = document.getElementById('stock-list');
-    if (!list) return;
-    list.innerHTML = '';
-
-    let totalAssets = 0;
-
-    stocks.forEach((s, i) => {
-        const total = s.price * s.qty;
-        const profit = total - (s.prev * s.qty);
-        const profitClass = profit >= 0 ? 'plus' : 'minus';
-        totalAssets += total;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="stock-ticker-input" value="${s.ticker}" placeholder="銘柄コード(AAPL等)" onchange="fetchStock(this.value, ${i})"></td>
-            <td class="stock-price-cell">
-                <div class="price-wrapper" style="display:flex; align-items:center; gap:8px;">
-                    <span class="price-val">¥${s.price.toLocaleString()}</span>
-                    <button class="refresh-btn" onclick="fetchStock(null, ${i}, true)">取得</button>
-                </div>
-            </td>
-            <td><input type="number" class="stock-qty-input" value="${s.qty}" oninput="updateStockQty(${i}, this.value)"></td>
-            <td class="bold">¥${total.toLocaleString()}</td>
-            <td class="${profitClass}">${profit >= 0 ? '+' : ''}¥${profit.toLocaleString()}</td>
-            <td><button class="btn-icon delete" onclick="removeStockRow(${i})"><i data-lucide="trash-2"></i></button></td>
-        `;
-        list.appendChild(tr);
-    });
-
-    const totalEl = document.getElementById('total-assets-value');
-    if (totalEl) totalEl.textContent = `¥${totalAssets.toLocaleString()}`;
-
-    lucide.createIcons();
-}
-
-window.addStockRow = () => {
-    stocks.push({ name: '新銘柄', ticker: '', price: 0, qty: 0, prev: 0 });
-    saveAllData();
-    renderStocks();
-};
-
-window.removeStockRow = (i) => {
-    stocks.splice(i, 1);
-    saveAllData();
-    renderStocks();
-};
-
-window.updateStockQty = (i, val) => {
-    stocks[i].qty = parseInt(val) || 0;
-    saveAllData();
-    renderStocks();
-};
-
-window.fetchStock = async (tickerVal, i, explicit = false) => {
-    const input = document.querySelectorAll('.stock-ticker-input')[i];
-    const targetTicker = tickerVal || (input ? input.value : '');
-    if (!targetTicker && !explicit) return;
-
-    const cleanTicker = targetTicker.toUpperCase().trim();
-    let price = MOCK_PRICES[cleanTicker];
-
-    if (!price) {
-        if (cleanTicker.length === 0) price = 0;
-        else {
-            // Consistent pseudo-random price for unknown tickers
-            let hash = 0;
-            for (let j = 0; j < cleanTicker.length; j++) hash = cleanTicker.charCodeAt(j) + ((hash << 5) - hash);
-            price = Math.abs(hash % 50000) + 1000;
-        }
-    }
-
-    stocks[i].ticker = cleanTicker;
-    stocks[i].price = price;
-    if (stocks[i].prev === 0 && price > 0) stocks[i].prev = Math.floor(price * (0.8 + Math.random() * 0.4));
-
-    saveAllData();
-    renderStocks();
-};
-
 // --- Todo Logic ---
 const renderTodos = (p) => {
     const list = document.getElementById(`todo-${p}`);
@@ -608,7 +444,6 @@ updateTodayDisplay();
 
 renderDashboard();
 renderCalendar();
-updateFinanceAll();
 renderTodos('husband');
 renderTodos('wife');
 renderTodos('shared');
