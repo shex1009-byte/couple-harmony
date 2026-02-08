@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Couple Harmony - 夫婦の共有ダッシュボード</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;700&display=swap"
         rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Harmony">
@@ -48,10 +48,6 @@
                 <li data-tab="wishlist">
                     <i data-lucide="heart"></i>
                     <span>やりたいこと</span>
-                </li>
-                <li data-tab="weekly-tasks">
-                    <i data-lucide="truck"></i>
-                    <span>集荷設定</span>
                 </li>
             </ul>
             <div class="sidebar-footer">
@@ -179,6 +175,12 @@
                         <h2 id="month-display">2026年 2月</h2>
                         <button class="btn-icon" id="next-month"><i data-lucide="chevron-right"></i></button>
                     </div>
+                    <div style="padding: 0 1.5rem 1rem; text-align: right;">
+                        <button class="btn-secondary"
+                            onclick="document.getElementById('weekly-modal').classList.add('active')">
+                            <i data-lucide="settings-2"></i> 毎週の集荷設定
+                        </button>
+                    </div>
                     <div class="calendar-grid" id="calendar-grid">
                         <!-- JS will populate this -->
                     </div>
@@ -248,7 +250,25 @@
         </div>
     </div>
 
-    <script src="app.js?v=3"></script>
+    <!-- Weekly Tasks Modal -->
+    <div id="weekly-modal" class="modal">
+        <div class="modal-content glass">
+            <span class="close-button"
+                onclick="document.getElementById('weekly-modal').classList.remove('active')">&times;</span>
+            <h2>毎週の集荷設定</h2>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                ここで設定した項目はカレンダーとダッシュボードに自動で表示されます。
+            </p>
+            <div id="weekly-tasks-container">
+                <!-- JS Dynamic -->
+            </div>
+            <div class="modal-footer" style="margin-top: 1rem;">
+                <button class="btn-primary" onclick="addWeeklyTask()">+ 設定を追加</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=5"></script>
 </body>
 
 </html>

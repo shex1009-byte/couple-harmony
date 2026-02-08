@@ -1,10 +1,10 @@
-const CACHE_NAME = 'harmony-v4';
+const CACHE_NAME = 'harmony-v5';
 const ASSETS = [
     './',
-    './index.html?v=3',
-    './style.css?v=3',
-    './app.js?v=3',
-    './manifest.json'
+    './index.html?v=5',
+    './style.css?v=5',
+    './app.js?v=5',
+    './manifest.json?v=5'
 ];
 
 self.addEventListener('install', (e) => {
