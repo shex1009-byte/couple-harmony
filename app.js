@@ -212,23 +212,30 @@ if (deleteBtn) {
 }
 
 
-function saveEvents() {
+const saveEvents = () => {
     localStorage.setItem('couple_harmony_events', JSON.stringify(events));
     pushCloudData('events', events);
-}
+};
+
+const saveWishlist = () => {
+    localStorage.setItem('harmony_wishlist', JSON.stringify(wishlist));
+    pushCloudData('wishlist', wishlist);
+};
+
+const saveWeeklyTasks = () => {
+    localStorage.setItem('harmony_weekly_tasks', JSON.stringify(weeklyTasks));
+    pushCloudData('weeklyTasks', weeklyTasks);
+};
 
 function saveAllData() {
-    localStorage.setItem('couple_harmony_events', JSON.stringify(events));
+    saveEvents();
     localStorage.setItem('harmony_todos', JSON.stringify(todos));
-    localStorage.setItem('harmony_wishlist', JSON.stringify(wishlist));
-    localStorage.setItem('harmony_weekly_tasks', JSON.stringify(weeklyTasks));
+    saveWishlist();
+    saveWeeklyTasks();
     const memoValue = document.getElementById('dashboard-memo')?.value || "";
     localStorage.setItem('harmony_memo', memoValue);
 
-    pushCloudData('events', events);
     pushCloudData('todos', todos);
-    pushCloudData('wishlist', wishlist);
-    pushCloudData('weeklyTasks', weeklyTasks);
     pushCloudData('memo', memoValue);
 }
 
