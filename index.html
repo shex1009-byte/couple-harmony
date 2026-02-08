@@ -45,6 +45,14 @@
                     <i data-lucide="calendar"></i>
                     <span>スケジュール</span>
                 </li>
+                <li data-tab="wishlist">
+                    <i data-lucide="heart"></i>
+                    <span>やりたいこと</span>
+                </li>
+                <li data-tab="weekly-tasks">
+                    <i data-lucide="truck"></i>
+                    <span>集荷設定</span>
+                </li>
             </ul>
             <div class="sidebar-footer">
                 <div class="cloud-status" id="cloud-status">
@@ -135,7 +143,35 @@
                 </div>
             </section>
 
-            <!-- Tab: Calendar -->
+            <!-- Tab: Wishlist (やりたいことリスト) -->
+            <section id="wishlist" class="tab-content">
+                <div class="card glass">
+                    <div class="section-header-row">
+                        <h2>やりたいことリスト</h2>
+                        <button class="btn-primary" onclick="addWishItem()">
+                            <i data-lucide="plus"></i>追加
+                        </button>
+                    </div>
+                    <ul id="wish-list-container" class="todo-list">
+                        <!-- Dynamic -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Tab: Weekly Tasks (毎週の集荷設定) -->
+            <section id="weekly-tasks" class="tab-content">
+                <div class="card glass">
+                    <div class="section-header-row">
+                        <h2>毎週の集荷設定</h2>
+                        <button class="btn-primary" onclick="addWeeklyTask()">
+                            <i data-lucide="plus"></i>設定追加
+                        </button>
+                    </div>
+                    <div id="weekly-tasks-container" class="grid-container dashboard-grid">
+                        <!-- Dynamic -->
+                    </div>
+                </div>
+            </section>
             <section id="calendar" class="tab-content">
                 <div class="card glass full-calendar">
                     <div class="calendar-header">
@@ -147,159 +183,6 @@
                         <!-- JS will populate this -->
                     </div>
                 </div>
-            </section>
-
-            <!-- Tab: Finance -->
-            <section id="finance" class="tab-content">
-                <div class="finance-grid">
-                    <!-- Column: Husband (夫) -->
-                    <div class="finance-column husband">
-                        <div class="card glass">
-                            <div class="column-header">
-                                <i data-lucide="user"></i>
-                                <h2>夫 (Husband)</h2>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="finance-row summary-row primary">
-                                    <label>収入</label>
-                                    <div class="input-with-label">
-                                        <span class="currency">¥</span>
-                                        <input type="number" id="h-income" class="fin-input total-input" value="325000">
-                                    </div>
-                                </div>
-                                <div class="finance-row summary-row">
-                                    <label>固定費合計</label>
-                                    <span class="value-display warning" id="h-fixed-total">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row">
-                                    <label>その他合計</label>
-                                    <span class="value-display warning" id="h-other-total">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row">
-                                    <label>貯蓄合計</label>
-                                    <span class="value-display success" id="h-savings-total">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row footer">
-                                    <label>支出（合計）</label>
-                                    <span class="value-display" id="h-expenditure">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row balance">
-                                    <label>収支（残金）</label>
-                                    <span class="value-display" id="h-balance">¥0</span>
-                                </div>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="section-header-row">
-                                    <h3>貯金内訳</h3>
-                                    <button class="btn-icon" onclick="addSubItem('h', 'h-savings-list', 'save-val')"><i
-                                            data-lucide="plus"></i></button>
-                                </div>
-                                <div class="breakdown-list" id="h-savings-list">
-                                    <!-- Items will be injected by JS -->
-                                </div>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="section-header-row">
-                                    <h3>支出内訳 (固定費)</h3>
-                                    <button class="btn-icon" onclick="addSubItem('h', 'h-fixed-list', 'fixed-val')"><i
-                                            data-lucide="plus"></i></button>
-                                </div>
-                                <div class="breakdown-list" id="h-fixed-list">
-                                    <!-- Items will be injected by JS -->
-                                </div>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="section-header-row">
-                                    <h3>支出内訳 (その他)</h3>
-                                    <button class="btn-icon" onclick="addSubItem('h', 'h-other-list', 'other-val')"><i
-                                            data-lucide="plus"></i></button>
-                                </div>
-                                <div class="breakdown-list" id="h-other-list">
-                                    <!-- Items will be injected by JS -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column: Wife (妻) -->
-                    <div class="finance-column wife">
-                        <div class="card glass">
-                            <div class="column-header">
-                                <i data-lucide="user"></i>
-                                <h2>妻 (Wife)</h2>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="finance-row summary-row primary">
-                                    <label>収入</label>
-                                    <div class="input-with-label">
-                                        <span class="currency">¥</span>
-                                        <input type="number" id="w-income" class="fin-input total-input" value="230000">
-                                    </div>
-                                </div>
-                                <div class="finance-row summary-row">
-                                    <label>固定費合計</label>
-                                    <span class="value-display warning" id="w-fixed-total">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row">
-                                    <label>その他合計</label>
-                                    <span class="value-display warning" id="w-other-total">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row">
-                                    <label>貯蓄合計</label>
-                                    <span class="value-display success" id="w-savings-total">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row footer">
-                                    <label>支出（合計）</label>
-                                    <span class="value-display" id="w-expenditure">¥0</span>
-                                </div>
-                                <div class="finance-row summary-row balance">
-                                    <label>収支（残金）</label>
-                                    <span class="value-display" id="w-balance">¥0</span>
-                                </div>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="section-header-row">
-                                    <h3>貯金内訳</h3>
-                                    <button class="btn-icon" onclick="addSubItem('w', 'w-savings-list', 'save-val')"><i
-                                            data-lucide="plus"></i></button>
-                                </div>
-                                <div class="breakdown-list" id="w-savings-list">
-                                    <!-- Items will be injected by JS -->
-                                </div>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="section-header-row">
-                                    <h3>支出内訳 (固定費)</h3>
-                                    <button class="btn-icon" onclick="addSubItem('w', 'w-fixed-list', 'fixed-val')"><i
-                                            data-lucide="plus"></i></button>
-                                </div>
-                                <div class="breakdown-list" id="w-fixed-list">
-                                    <!-- Items will be injected by JS -->
-                                </div>
-                            </div>
-
-                            <div class="finance-section">
-                                <div class="section-header-row">
-                                    <h3>支出内訳 (その他)</h3>
-                                    <button class="btn-icon add-sub-item"
-                                        onclick="addSubItem('w', 'w-other-list', 'other-val')"><i
-                                            data-lucide="plus"></i></button>
-                                </div>
-                                <div class="breakdown-list" id="w-other-list">
-                                    <!-- Items will be injected by JS -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-            </section>
-
             </section>
 
         </main>

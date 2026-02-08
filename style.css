@@ -1423,3 +1423,83 @@ body {
         white-space: normal !important;
     }
 }
+
+/* Wishlist & Weekly Specifics */
+.todo-url-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--glass-border);
+    color: var(--accent-gold);
+    font-size: 0.8rem;
+    padding: 4px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.todo-url-input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.wish-link {
+    color: var(--accent-gold);
+    text-decoration: none;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: 6px;
+}
+
+.weekly-task-card {
+    padding: 1rem !important;
+}
+
+.weekly-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.weekly-row.settings {
+    margin-bottom: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.weekly-row input[type="text"] {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.weekly-row select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 6px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.switch-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.switch-label input[type="checkbox"] {
+    accent-color: var(--accent-gold);
+    width: 18px;
+    height: 18px;
+}
