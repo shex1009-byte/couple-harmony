@@ -43,7 +43,6 @@ async function pullCloudData() {
         if (item.key === 'events') events = item.content;
         if (item.key === 'todos') todos = item.content;
         if (item.key === 'wishlist') wishlist = item.content;
-        if (item.key === 'weeklyTasks') weeklyTasks = item.content;
         const memoArea = document.getElementById('dashboard-memo');
         if (item.key === 'memo' && memoArea) memoArea.value = item.content;
     });
@@ -72,7 +71,6 @@ function refreshAllUI() {
     renderDashboard();
     renderCalendar();
     renderWishlist();
-    renderWeeklyTasks();
     ['husband', 'wife', 'shared'].forEach(renderTodos);
 }
 
@@ -105,7 +103,6 @@ let todos = JSON.parse(localStorage.getItem('harmony_todos')) || {
     shared: [{ text: '旅行の持ち物リスト作成', done: false }, { text: 'ふるさと納税の検討', done: false }]
 };
 let wishlist = JSON.parse(localStorage.getItem('harmony_wishlist')) || [];
-let weeklyTasks = JSON.parse(localStorage.getItem('harmony_weekly_tasks')) || [];
 let memo = localStorage.getItem('harmony_memo') || "";
 
 // --- Tab Switching Logic ---
@@ -223,15 +220,13 @@ const saveWishlist = () => {
 };
 
 const saveWeeklyTasks = () => {
-    localStorage.setItem('harmony_weekly_tasks', JSON.stringify(weeklyTasks));
-    pushCloudData('weeklyTasks', weeklyTasks);
+    // Removed
 };
 
 function saveAllData() {
     saveEvents();
     localStorage.setItem('harmony_todos', JSON.stringify(todos));
     saveWishlist();
-    saveWeeklyTasks();
     const memoValue = document.getElementById('dashboard-memo')?.value || "";
     localStorage.setItem('harmony_memo', memoValue);
 
@@ -260,13 +255,8 @@ function renderDashboard() {
         const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
         const dayOfWeek = targetDate.getDay();
 
-        // Combined Events and Weekly Tasks
-        const dayEvents = events.filter(e => e.date === dateStr).map(e => ({ ...e, type: 'event' }));
-        const recurring = weeklyTasks.filter(t => t.day == dayOfWeek).map(t => ({
-            id: 'weekly-' + t.day, title: '【毎週】' + t.title, time: '00:00', person: 'shared', type: 'weekly'
-        }));
-
-        const combined = [...dayEvents, ...recurring];
+        // Combined Events
+        const combined = events.filter(e => e.date === dateStr).map(e => ({ ...e, type: 'event' }));
 
         if (combined.length === 0) {
             list.innerHTML = `<p style="color:var(--text-secondary); padding: 10px;">${dateOffset === 0 ? '今日' : '明日'}の予定はありません</p>`;
@@ -380,15 +370,11 @@ function renderCalendar() {
 }
 
 function renderDayEvents(container, dateStr, dayOfWeek) {
-    const dayEvents = events.filter(e => e.date === dateStr).map(e => ({ ...e, type: 'event' }));
-    const recurring = weeklyTasks.filter(t => t.day == dayOfWeek).map(t => ({
-        id: 'weekly-' + t.day, title: '🛒 ' + t.title, time: '', person: 'shared', type: 'weekly'
-    }));
-    const combined = [...dayEvents, ...recurring];
+    const combined = events.filter(e => e.date === dateStr).map(e => ({ ...e, type: 'event' }));
 
     combined.sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99')).forEach(ev => {
         const evEl = document.createElement('div');
-        evEl.className = `event-tiny ${ev.person} ${ev.type === 'weekly' ? 'weekly-badge' : ''}`;
+        evEl.className = `event-tiny ${ev.person}`;
         const timeDisplay = ev.time ? `<span class="tiny-time">${ev.time}</span> ` : '';
         evEl.innerHTML = `${timeDisplay}${ev.title}`;
         if (ev.type === 'event') {
@@ -434,23 +420,6 @@ window.deleteWish = (i) => { wishlist.splice(i, 1); saveWishlist(); renderWishli
 window.toggleWish = (i) => { wishlist[i].done = !wishlist[i].done; saveWishlist(); renderWishlist(); };
 window.updateWishText = (i, val) => { wishlist[i].text = val; saveWishlist(); };
 window.updateWishUrl = (i, val) => { wishlist[i].url = val; saveWishlist(); renderWishlist(); };
-
-const renderWeeklyTasks = () => {
-    const container = document.getElementById('weekly-tasks-container');
-    if (!container) return;
-    container.innerHTML = '';
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    weeklyTasks.forEach((task, i) => {
-        const card = document.createElement('div');
-        card.className = 'card glass weekly-task-card';
-        card.innerHTML = `<div class="weekly-row"><input type="text" value="${task.title}" oninput="updateWeeklyTaskField(${i}, 'title', this.value)" placeholder="集荷項目 (例: クリーニング)"><button class="btn-icon delete" onclick="deleteWeeklyTask(${i})"><i data-lucide="trash-2"></i></button></div><div class="weekly-row settings"><select onchange="updateWeeklyTaskField(${i}, 'day', this.value)">${days.map((d, index) => `<option value="${index}" ${task.day == index ? 'selected' : ''}>${d}曜日に実施</option>`).join('')}</select><label class="switch-label"><input type="checkbox" ${task.notify ? 'checked' : ''} onchange="updateWeeklyTaskField(${i}, 'notify', this.checked)"><span>通知有効</span></label></div>`;
-        container.appendChild(card);
-    });
-    lucide.createIcons();
-};
-window.addWeeklyTask = () => { weeklyTasks.push({ title: '', day: 1, notify: true }); saveWeeklyTasks(); renderWeeklyTasks(); refreshAllUI(); };
-window.deleteWeeklyTask = (i) => { weeklyTasks.splice(i, 1); saveWeeklyTasks(); renderWeeklyTasks(); refreshAllUI(); };
-window.updateWeeklyTaskField = (i, field, val) => { weeklyTasks[i][field] = val; saveWeeklyTasks(); refreshAllUI(); };
 
 function updateTodayDisplay() {
     document.getElementById('current-date').textContent = new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date());

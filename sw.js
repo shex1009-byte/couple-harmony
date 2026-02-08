@@ -1,9 +1,9 @@
-const CACHE_NAME = 'harmony-v5';
+const CACHE_NAME = 'harmony-v6';
 const ASSETS = [
     './',
-    './index.html?v=5',
-    './style.css?v=5',
-    './app.js?v=5',
+    './index.html?v=6',
+    './style.css?v=6',
+    './app.js?v=6',
     './manifest.json?v=5'
 ];
 
